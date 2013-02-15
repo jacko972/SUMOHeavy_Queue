@@ -22,16 +22,77 @@
 class SUMOHeavy_Queue_Adapter_IronMQ
     extends Zend_Queue_Adapter_AdapterAbstract
 {
-    CONST PROJECTS_URI = 'http://mq-aws-us-east-1.iron.io/1/projects';
+    /**
+     * IronMQ Projects URI
+     */
+    const PROJECTS_URI = 'http://mq-aws-us-east-1.iron.io/1/projects';
 
-    private function _setHeaders()
+    /**
+     * Get a http client instance
+     *
+     * @param string $path
+     * @return Zend_Http_Client
+     */
+    protected function prepareHttpClient($path)
     {
-        $headers = array(
-            'Authorization' => "OAuth {$this->_options['token']}",
-            'Content-Type' => 'application/json',
-        );
+        return $this->getHttpClient()
+                    ->setUri(self::PROJECTS_URI . $path);
+    }
 
-        return $headers;
+    /**
+     * Parse response object and check for errors
+     *
+     * @param Zend_Http_Response $response
+     * @throws RuntimeException
+     * @return stdClass
+     */
+    protected function _parseResponse(Zend_Http_Response $response)
+    {
+        if ($response->isError()) {
+            switch ($response->getStatus()) {
+                case 401:
+                    throw new RuntimeException(
+                        'Unauthorized: '
+                        . 'The OAuth token is either not provided or invalid'
+                    );
+                    break;
+                case 503:
+                    throw new RuntimeException(
+                        'Service Unavailable. '
+                        . 'Clients should implement exponential backoff '
+                        . 'to retry the request.'
+                    );
+                    break;
+                default:
+                    throw new RuntimeException(
+                        'Unknown error during request to IronMQ server'
+                    );
+            }
+        }
+
+        $responseBody = Zend_Json::decode($response->getBody());
+        return $responseBody['msg'];
+    }
+
+    /**
+     * Returns http client object
+     *
+     * @return Zend_Http_Client
+     */
+    public function getHttpClient()
+    {
+        if (null === $this->_client) {
+            $this->_client = new Zend_Http_Client();
+
+            $headers = array(
+                'Content-Type' => 'application/json',
+                'Authorization' => "OAuth {$this->_options['token']}",
+            );
+            $this->_client->setMethod(Zend_Http_Client::GET)
+                ->setHeaders($headers);
+        }
+
+        return $this->_client;
     }
 
     private function _in_array_r($needle, $haystack, $strict = false)
@@ -187,18 +248,15 @@ class SUMOHeavy_Queue_Adapter_IronMQ
                 )
             )
         );
-        $jsonMessage = Zend_Json::encode($messageArray);
 
-        $adapter = new Zend_Http_Client_Adapter_Curl();
-        $client = new Zend_Http_Client();
-        $client->setAdapter($adapter);
-        $client->setUri(
-            self::PROJECTS_URI
-            . "/{$this->_options['project_id']}/queues/{$queueName}/messages"
-        );
-        $client->setHeaders($this->_setHeaders());
-        $client->setRawData($jsonMessage);
-        $client->request("POST");
+        $response = $this->prepareHttpClient(
+            "/{$this->_options['project_id']}/queues/{$queueName}/messages"
+        )
+            ->setMethod(Zend_Http_Client::POST)
+            ->setRawData(Zend_Json::encode($messageArray))
+            ->request();
+
+        return $this->_parseResponse($response);
     }
 
     /**
