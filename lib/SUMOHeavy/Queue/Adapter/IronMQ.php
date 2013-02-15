@@ -23,7 +23,7 @@
 class SUMOHeavy_Queue_Adapter_IronMQ
     extends Zend_Queue_Adapter_AdapterAbstract
 {
-    CONST projects_uri = 'http://mq-aws-us-east-1.iron.io/1/projects';
+    CONST PROJECTS_URI = 'http://mq-aws-us-east-1.iron.io/1/projects';
 
     private function _setHeaders()
     {
@@ -33,6 +33,23 @@ class SUMOHeavy_Queue_Adapter_IronMQ
         );
 
         return $headers;
+    }
+
+    private function _in_array_r($needle, $haystack, $strict = false)
+    {
+        foreach ($haystack as $item) {
+            if (
+                (
+                    $strict ? $item === $needle : $item == $needle)
+                        || (is_array($item)
+                            && $this->_in_array_r($needle, $item, $strict)
+                )
+            ) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -46,13 +63,12 @@ class SUMOHeavy_Queue_Adapter_IronMQ
      */
     public function isExists($name)
     {
-        var_dump($this->getQueues());
-
         if (empty($this->_queues)) {
             $this->getQueues();
         }
 
-        return in_array($name, $this->_queues);
+        $exists = $this->_in_array_r($name, $this->_queues) ? true : false;
+        return $exists;
     }
 
     /**
@@ -92,7 +108,7 @@ class SUMOHeavy_Queue_Adapter_IronMQ
         $client = new Zend_Http_Client();
         $client->setAdapter($adapter);
         $client->setUri(
-            self::projects_uri
+            self::PROJECTS_URI
             . "/{$this->_options['project_id']}/queues/{$name}"
         );
         $client->setHeaders($this->_setHeaders());
@@ -113,12 +129,14 @@ class SUMOHeavy_Queue_Adapter_IronMQ
         $client = new Zend_Http_Client();
         $client->setAdapter($adapter);
         $client->setUri(
-            self::projects_uri
+            self::PROJECTS_URI
             . "/{$this->_options['project_id']}/queues"
         );
         $client->setHeaders($this->_setHeaders());
         $response = $client->request("GET");
-        return Zend_Json::decode($response->getBody());
+        $queues = Zend_Json::decode($response->getBody());
+        $this->_queues = $queues;
+        return $this->_queues;
     }
 
     /**
@@ -139,7 +157,7 @@ class SUMOHeavy_Queue_Adapter_IronMQ
         $client = new Zend_Http_Client();
         $client->setAdapter($adapter);
         $client->setUri(
-            self::projects_uri
+            self::PROJECTS_URI
             . "/{$this->_options['project_id']}/queues/{$queueName}"
         );
         $client->setHeaders($this->_setHeaders());
@@ -176,7 +194,7 @@ class SUMOHeavy_Queue_Adapter_IronMQ
         $client = new Zend_Http_Client();
         $client->setAdapter($adapter);
         $client->setUri(
-            self::projects_uri
+            self::PROJECTS_URI
             . "/{$this->_options['project_id']}/queues/{$queueName}/messages"
         );
         $client->setHeaders($this->_setHeaders());
@@ -205,7 +223,7 @@ class SUMOHeavy_Queue_Adapter_IronMQ
         $client = new Zend_Http_Client();
         $client->setAdapter($adapter);
         $client->setUri(
-            self::projects_uri
+            self::PROJECTS_URI
             . "/{$this->_options['project_id']}/queues/{$queueName}/messages"
         );
         $client->setHeaders($this->_setHeaders());
@@ -237,7 +255,7 @@ class SUMOHeavy_Queue_Adapter_IronMQ
         $client = new Zend_Http_Client();
         $client->setAdapter($adapter);
         $client->setUri(
-            self::projects_uri
+            self::PROJECTS_URI
             . "/{$this->_options['project_id']}/queues/"
             . "{$queueName}/messages/{$messageId}"
         );
