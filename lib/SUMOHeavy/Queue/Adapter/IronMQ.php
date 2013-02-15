@@ -94,6 +94,23 @@ class SUMOHeavy_Queue_Adapter_IronMQ
         return Zend_Json::decode($response->getBody());
     }
 
+    private function _inArrayR($needle, $haystack, $strict = false)
+    {
+        foreach ($haystack as $item) {
+            if (
+                (
+                $strict ? $item === $needle : $item == $needle)
+                || (is_array($item)
+                && $this->_inArrayR($needle, $item, $strict)
+                )
+            ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /**
      * Returns http client object
      *
@@ -113,23 +130,6 @@ class SUMOHeavy_Queue_Adapter_IronMQ
         }
 
         return $this->_client;
-    }
-
-    private function _inArrayR($needle, $haystack, $strict = false)
-    {
-        foreach ($haystack as $item) {
-            if (
-                (
-                    $strict ? $item === $needle : $item == $needle)
-                        || (is_array($item)
-                            && $this->_inArrayR($needle, $item, $strict)
-                )
-            ) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     /**
