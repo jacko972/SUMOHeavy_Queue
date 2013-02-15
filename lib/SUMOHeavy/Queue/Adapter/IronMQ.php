@@ -199,14 +199,18 @@ class SUMOHeavy_Queue_Adapter_IronMQ
      * Not all adapters support getQueues(); use isSupported('getQueues')
      * to determine if the adapter supports this feature.
      *
+     * @param integer|null $perPage
+     * @param integer|null $page
      * @return array
      */
-    public function getQueues()
+    public function getQueues($page = null, $perPage = null)
     {
         $response = $this->prepareHttpClient(
             "/{$this->_options['project_id']}/queues"
         )
             ->setMethod(Zend_Http_Client::GET)
+            ->setParameterGet('page', $page)
+            ->setParameterGet('per_page', $perPage)
             ->request();
 
         return $this->_parseResponse($response);
