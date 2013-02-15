@@ -50,12 +50,33 @@ class SUMOHeavy_Queue_Adapter_IronMQ
     {
         if ($response->isError()) {
             switch ($response->getStatus()) {
+                case 400:
+                    throw new RuntimeException(
+                        'Bad Request: Invalid JSON '
+                        . '(can\'t be parsed or has wrong types).'
+                    );
                 case 401:
                     throw new RuntimeException(
                         'Unauthorized: '
                         . 'The OAuth token is either not provided or invalid'
                     );
                     break;
+                case 404:
+                    throw new RuntimeException(
+                        'Not Found: The resource, project, '
+                        . 'or endpoint being requested doesn\'t exist.'
+                    );
+                case 405:
+                    throw new RuntimeException(
+                        'Invalid HTTP method: A GET, POST, DELETE, or PUT '
+                        . 'was sent to an endpoint that doesn\'t'
+                        . 'support that particular verb.'
+
+                    );
+                case 500:
+                    throw new RuntimeException(
+                        'Not Acceptable: Required fields are missing.'
+                    );
                 case 503:
                     throw new RuntimeException(
                         'Service Unavailable. '
