@@ -46,7 +46,13 @@ class SUMOHeavy_Queue_Adapter_IronMQ
      */
     public function isExists($name)
     {
-        // TODO: Implement isExists() method.
+        var_dump($this->getQueues());
+
+        if (empty($this->_queues)) {
+            $this->getQueues();
+        }
+
+        return in_array($name, $this->_queues);
     }
 
     /**
@@ -87,7 +93,7 @@ class SUMOHeavy_Queue_Adapter_IronMQ
         $client->setAdapter($adapter);
         $client->setUri(
             self::projects_uri
-            . "{$this->_options['project_id']}/queues/{$name}"
+            . "/{$this->_options['project_id']}/queues/{$name}"
         );
         $client->setHeaders($this->_setHeaders());
         $client->request("DELETE");
@@ -108,7 +114,7 @@ class SUMOHeavy_Queue_Adapter_IronMQ
         $client->setAdapter($adapter);
         $client->setUri(
             self::projects_uri
-            . "{$this->_options['project_id']}/queues"
+            . "/{$this->_options['project_id']}/queues"
         );
         $client->setHeaders($this->_setHeaders());
         $response = $client->request("GET");
@@ -134,7 +140,7 @@ class SUMOHeavy_Queue_Adapter_IronMQ
         $client->setAdapter($adapter);
         $client->setUri(
             self::projects_uri
-            . "{$this->_options['project_id']}/queues/{$queueName}"
+            . "/{$this->_options['project_id']}/queues/{$queueName}"
         );
         $client->setHeaders($this->_setHeaders());
         $response = $client->request("GET");
@@ -171,7 +177,7 @@ class SUMOHeavy_Queue_Adapter_IronMQ
         $client->setAdapter($adapter);
         $client->setUri(
             self::projects_uri
-            . "{$this->_options['project_id']}/queues/{$queueName}/messages"
+            . "/{$this->_options['project_id']}/queues/{$queueName}/messages"
         );
         $client->setHeaders($this->_setHeaders());
         $client->setRawData($jsonMessage);
@@ -200,7 +206,7 @@ class SUMOHeavy_Queue_Adapter_IronMQ
         $client->setAdapter($adapter);
         $client->setUri(
             self::projects_uri
-            . "{$this->_options['project_id']}/queues/{$queueName}/messages"
+            . "/{$this->_options['project_id']}/queues/{$queueName}/messages"
         );
         $client->setHeaders($this->_setHeaders());
 
@@ -232,7 +238,8 @@ class SUMOHeavy_Queue_Adapter_IronMQ
         $client->setAdapter($adapter);
         $client->setUri(
             self::projects_uri
-            . "{$this->_options['project_id']}/queues/{$queueName}/messages/{$messageId}"
+            . "/{$this->_options['project_id']}/queues/"
+            . "{$queueName}/messages/{$messageId}"
         );
         $client->setHeaders($this->_setHeaders());
         $client->request("DELETE");
