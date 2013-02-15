@@ -12,7 +12,6 @@
  * obtain it through the world-wide-web, please send an email
  * to info@sumoheavy.com so we can send you a copy immediately.
  *
- * Notice: The MailGun logo and name are trademarks of MailGun, Inc
  *
  * @category    SUMOHeavy
  * @package     SUMOHeavy_Queue
