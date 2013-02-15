@@ -70,8 +70,7 @@ class SUMOHeavy_Queue_Adapter_IronMQ
             }
         }
 
-        $responseBody = Zend_Json::decode($response->getBody());
-        return $responseBody['msg'];
+        return Zend_Json::decode($response->getBody());
     }
 
     /**
@@ -95,14 +94,14 @@ class SUMOHeavy_Queue_Adapter_IronMQ
         return $this->_client;
     }
 
-    private function _in_array_r($needle, $haystack, $strict = false)
+    private function _inArrayR($needle, $haystack, $strict = false)
     {
         foreach ($haystack as $item) {
             if (
                 (
                     $strict ? $item === $needle : $item == $needle)
                         || (is_array($item)
-                            && $this->_in_array_r($needle, $item, $strict)
+                            && $this->_inArrayR($needle, $item, $strict)
                 )
             ) {
                 return true;
@@ -127,7 +126,7 @@ class SUMOHeavy_Queue_Adapter_IronMQ
             $this->getQueues();
         }
 
-        $exists = $this->_in_array_r($name, $this->_queues) ? true : false;
+        $exists = $this->_inArrayR($name, $this->_queues) ? true : false;
         return $exists;
     }
 
@@ -164,15 +163,13 @@ class SUMOHeavy_Queue_Adapter_IronMQ
      */
     public function delete($name)
     {
-        $adapter = new Zend_Http_Client_Adapter_Curl();
-        $client = new Zend_Http_Client();
-        $client->setAdapter($adapter);
-        $client->setUri(
-            self::PROJECTS_URI
-            . "/{$this->_options['project_id']}/queues/{$name}"
-        );
-        $client->setHeaders($this->_setHeaders());
-        $client->request("DELETE");
+        $response = $this->prepareHttpClient(
+            "/{$this->_options['project_id']}/queues/{$name}"
+        )
+            ->setMethod(Zend_Http_Client::DELETE)
+            ->request();
+
+        return $this->_parseResponse($response);
     }
 
     /**
@@ -185,18 +182,13 @@ class SUMOHeavy_Queue_Adapter_IronMQ
      */
     public function getQueues()
     {
-        $adapter = new Zend_Http_Client_Adapter_Curl();
-        $client = new Zend_Http_Client();
-        $client->setAdapter($adapter);
-        $client->setUri(
-            self::PROJECTS_URI
-            . "/{$this->_options['project_id']}/queues"
-        );
-        $client->setHeaders($this->_setHeaders());
-        $response = $client->request("GET");
-        $queues = Zend_Json::decode($response->getBody());
-        $this->_queues = $queues;
-        return $this->_queues;
+        $response = $this->prepareHttpClient(
+            "/{$this->_options['project_id']}/queues"
+        )
+            ->setMethod(Zend_Http_Client::GET)
+            ->request();
+
+        return $this->_parseResponse($response);
     }
 
     /**
@@ -213,16 +205,13 @@ class SUMOHeavy_Queue_Adapter_IronMQ
             $queueName = $queue->getName();
         }
 
-        $adapter = new Zend_Http_Client_Adapter_Curl();
-        $client = new Zend_Http_Client();
-        $client->setAdapter($adapter);
-        $client->setUri(
-            self::PROJECTS_URI
-            . "/{$this->_options['project_id']}/queues/{$queueName}"
-        );
-        $client->setHeaders($this->_setHeaders());
-        $response = $client->request("GET");
-        $responseBody = Zend_Json::decode($response->getBody());
+        $response = $this->prepareHttpClient(
+            "/{$this->_options['project_id']}/queues/{$queueName}"
+        )
+            ->setMethod(Zend_Http_Client::GET)
+            ->request();
+
+        $responseBody = $this->_parseResponse($response);
         return $responseBody['size'];
     }
 
@@ -276,25 +265,24 @@ class SUMOHeavy_Queue_Adapter_IronMQ
             $queueName = $queue->getName();
         }
 
-        $adapter = new Zend_Http_Client_Adapter_Curl();
-        $client = new Zend_Http_Client();
-        $client->setAdapter($adapter);
-        $client->setUri(
-            self::PROJECTS_URI
-            . "/{$this->_options['project_id']}/queues/{$queueName}/messages"
+        $response = $this->prepareHttpClient(
+            "/{$this->_options['project_id']}/queues/{$queueName}/messages"
+        )
+            ->setParameterGet('n', $maxMessages)
+            ->setParameterGet('timeout', $timeout)
+            ->setMethod(Zend_Http_Client::GET)
+            ->request();
+
+        $responseBody = $this->_parseResponse($response);
+        $messages = $responseBody['messages'];
+
+
+        $options = array (
+          'queue'   => $queue,
+          'data'    => $messages,
         );
-        $client->setHeaders($this->_setHeaders());
 
-        if (isset($maxMessages)) {
-            $client->setParameterGet('n', $maxMessages);
-        }
-
-        if (isset($timeout)) {
-            $client->setParameterGet('timeout', $timeout);
-        }
-
-        $response = $client->request("GET");
-        return Zend_Json::decode($response->getBody());
+        return new Zend_Queue_Message($options);
     }
 
     /**
@@ -308,16 +296,20 @@ class SUMOHeavy_Queue_Adapter_IronMQ
      */
     public function deleteMessage(Zend_Queue_Message $message)
     {
-        $adapter = new Zend_Http_Client_Adapter_Curl();
-        $client = new Zend_Http_Client();
-        $client->setAdapter($adapter);
-        $client->setUri(
-            self::PROJECTS_URI
-            . "/{$this->_options['project_id']}/queues/"
-            . "{$queueName}/messages/{$messageId}"
-        );
-        $client->setHeaders($this->_setHeaders());
-        $client->request("DELETE");
+        $queueName = $this->getQueue()->getOption('name');
+        $messages = $message->toArray();
+        foreach ($messages as $message) {
+            $messageId = $message['id'];
+            $response = $this->prepareHttpClient(
+                "/{$this->_options['project_id']}/queues/"
+                . "{$queueName}/messages/{$messageId}"
+            )
+                ->setMethod(Zend_Http_Client::DELETE)
+                ->request();
+            $this->_parseResponse($response);
+        }
+
+        return true;
     }
 
     /**
