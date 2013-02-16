@@ -94,6 +94,14 @@ class SUMOHeavy_Queue_Adapter_IronMQ
         return Zend_Json::decode($response->getBody());
     }
 
+    /**
+     * Find a string in a multi-dimensional array
+     *
+     * @param $needle
+     * @param $haystack
+     * @param bool $strict
+     * @return bool
+     */
     private function _inArrayR($needle, $haystack, $strict = false)
     {
         foreach ($haystack as $item) {
@@ -243,13 +251,39 @@ class SUMOHeavy_Queue_Adapter_IronMQ
     }
 
     /**
-     * Send a message to the queue
+     * Add Messages to a Queue
      *
-     * @param  mixed $message Message to send to the active queue
-     * @param  Zend_Queue|null $queue
-     * @return Zend_Queue_Message
+     * This call adds or pushes messages onto the queue.
+     *
+     * Query options include:
+     *
+     * 'timeout'    => (int)
+     *      optional - After timeout (in seconds), item will be placed
+     *      back onto queue. You must delete the message from the queue
+     *      to ensure it does not go back onto the queue.
+     *      Default is 60 seconds. Maximum is 86,400 seconds (24 hours).
+     *
+     * 'delay'      => (int)
+     *      optional - The item will not be available on the queue until
+     *      this many seconds have passed.
+     *      Default is 0 seconds. Maximum is 604,800 seconds (7 days).
+     *
+     * 'expiresIn'  => (int)
+     *      optional - How long in seconds to keep the item on the queue
+     *      before it is deleted.
+     *      Default is 604,800 seconds (7 days).
+     *      Maximum is 2,592,000 seconds (30 days).
+     *
+     * @param   mixed $message Message to send to the active queue
+     * @param   Zend_Queue|null $queue
+     * @param   null $timeout
+     * @param   null $delay
+     * @param   null $expiresIn
+     * @return  Zend_Queue_Message
      */
-    public function send($message, Zend_Queue $queue = null)
+    public function send(
+        $message, Zend_Queue $queue = null, $timeout = null,
+            $delay = null, $expiresIn = null)
     {
         if (!isset($queue)) {
             $queueName = $this->getQueue()->getName();
@@ -268,6 +302,9 @@ class SUMOHeavy_Queue_Adapter_IronMQ
         $response = $this->prepareHttpClient(
             "/{$this->_options['project_id']}/queues/{$queueName}/messages"
         )
+            ->setParameterGet('timeout', $timeout)
+            ->setParameterGet('delay', $delay)
+            ->setParameterGet('expires_in', $expiresIn)
             ->setMethod(Zend_Http_Client::POST)
             ->setRawData(Zend_Json::encode($messageArray))
             ->request();
@@ -276,7 +313,24 @@ class SUMOHeavy_Queue_Adapter_IronMQ
     }
 
     /**
-     * Get messages in the queue
+     * Get Messages from a Queue
+     *
+     * This call gets/reserves messages from the queue. The messages
+     * will not be deleted, but will be reserved until the timeout expires.
+     * If the timeout expires before the messages are deleted, the messages
+     * will be placed back onto the queue. As a result, be sure to delete
+     * the messages after you’re done with them.
+     *
+     * 'maxMessages'    => (int)
+     *      optional - The maximum number of messages to get.
+     *      Default is 1. Maximum is 100.
+     *
+     * 'timeout'        => (int)
+     *      optional - After timeout (in seconds), item will be
+     *      placed back onto queue. You must delete the message
+     *      from the queue to ensure it does not go back onto the queue.
+     *      If not set, value from POST is used.
+     *      Default is 60 seconds, maximum is 86,400 seconds (24 hours).
      *
      * @param  integer|null $maxMessages Maximum number of messages to return
      * @param  integer|null $timeout Visibility timeout for these messages
@@ -313,10 +367,11 @@ class SUMOHeavy_Queue_Adapter_IronMQ
     }
 
     /**
-     * Delete a message from the queue
+     * Delete a Message from a queue
      *
-     * Return true if the message is deleted, false if the deletion is
-     * unsuccessful.
+     * This call will delete the message.
+     * Be sure you call this after you’re done with a message
+     * or it will be placed back on the queue.
      *
      * @param  Zend_Queue_Message $message
      * @return boolean
