@@ -194,10 +194,12 @@ class SUMOHeavy_Queue_Adapter_IronMQ
     }
 
     /**
-     * Get an array of all available queues
+     * List Message Queues
      *
-     * Not all adapters support getQueues(); use isSupported('getQueues')
-     * to determine if the adapter supports this feature.
+     * Get a list of all queues in a project.
+     * By default, 30 queues are listed at a time.
+     * To see more, use the page parameter or the per_page parameter.
+     * Up to 100 queues may be listed on a single page.
      *
      * @param integer|null $perPage
      * @param integer|null $page
@@ -279,7 +281,7 @@ class SUMOHeavy_Queue_Adapter_IronMQ
      * @param  integer|null $maxMessages Maximum number of messages to return
      * @param  integer|null $timeout Visibility timeout for these messages
      * @param  Zend_Queue|null $queue
-     * @return Zend_Queue_Message_Iterator
+     * @return Zend_Queue_Message
      */
     public function receive(
         $maxMessages = null, $timeout = null, Zend_Queue $queue = null)
@@ -335,6 +337,115 @@ class SUMOHeavy_Queue_Adapter_IronMQ
         }
 
         return true;
+    }
+
+    /**
+     * This allows you to change the properties of a queue
+     * including setting subscribers and
+     * the push type if you want it to be a push queue.
+     *
+     * Query options include:
+     *
+     * 'subscribers'    => (url)
+     *      optional - An array of subscriber hashes containing a "url" field.
+     *      This set of subscribers will replace the existing subscribers.
+     *      To add or remove subscribers, see the add subscribers endpoint
+     *      or the remove subscribers endpoint.
+     *
+     * 'pushType'       => (multicast|unicast)
+     *      optional - Either multicast to push to all subscribers
+     *      or unicast to push to one and only one subscriber.
+     *      Default is “multicast”.
+     *
+     * 'retries'        => (int)
+     *      optional - How many times to retry on failure. Default is 3.
+     *
+     * 'retriesDelay'   => (int)
+     *      optional - Delay between each retry in seconds. Default is 60.
+     *
+     * @param array     $subscribers
+     * @param string    $pushType
+     * @param integer   $retries
+     * @param integer   $retriesDelay
+     * @return \stdClass
+     */
+    public function updateQueue(
+        array $subscribers = null, $pushType = null,
+            $retries = null, $retriesDelay = null)
+    {
+        if (!isset($queue)) {
+            $queueName = $this->getQueue()->getName();
+        } else {
+            $queueName = $queue->getName();
+        }
+
+        $urls = array();
+        foreach ($subscribers as $subscriber) {
+            $urls[] = array (
+                'url' => $subscriber
+            );
+        }
+
+        $subscriberArray = array (
+            'subscribers' => $urls
+        );
+
+        $subscribersJson = Zend_Json::encode($subscriberArray);
+
+        $response = $this->prepareHttpClient(
+            "/{$this->_options['project_id']}/queues/{$queueName}"
+        )
+            ->setMethod(Zend_Http_Client::POST)
+            ->setParameterGet('subscribers', $subscribersJson)
+            ->setParameterGet('push_type', $pushType)
+            ->setParameterGet('retries', $retries)
+            ->setParameterGet('retries_delay', $retriesDelay)
+            ->request();
+
+        return $this->_parseResponse($response);
+    }
+
+    /**
+     * Add subscribers (HTTP endpoints) to a queue.
+     * This is for Push Queues only.
+     *
+     * Query options include:
+     *
+     * 'subscribers'    => (url)
+     *      optional - An array of subscriber hashes containing a "url" field.
+     *
+     * @param array $subscribers
+     * @return \stdClass
+     */
+    public function addSubscribersToQueue(array $subscribers = null)
+    {
+        if (!isset($queue)) {
+            $queueName = $this->getQueue()->getName();
+        } else {
+            $queueName = $queue->getName();
+        }
+
+        $urls = array();
+        foreach ($subscribers as $subscriber) {
+            $urls[] = array (
+                'url' => $subscriber
+            );
+        }
+
+        $subscriberArray = array (
+            'subscribers' => $urls
+        );
+
+        $subscribersJson = Zend_Json::encode($subscriberArray);
+
+        $response = $this->prepareHttpClient(
+            "/{$this->_options['project_id']}/queues/{$queueName}/subscribers"
+        )
+            ->setMethod(Zend_Http_Client::POST)
+            ->setParameterGet('subscribers', $subscribersJson)
+            ->request();
+
+        return $this->_parseResponse($response);
     }
 
     /**
