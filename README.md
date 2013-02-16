@@ -4,11 +4,6 @@ This module allows the use of IronMQ as a Zend_Queue.
 
 ## Usage
 
-Drop this into our ZF1 structure.
-
-A few examples below.
-
-Want to update a product?
 ```php
 $options = array(
     'token' => 'YOUR-IRONMQ-TOKEN',
