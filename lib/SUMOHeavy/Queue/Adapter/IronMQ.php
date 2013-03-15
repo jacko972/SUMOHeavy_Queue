@@ -201,7 +201,7 @@ class SUMOHeavy_Queue_Adapter_IronMQ
         return $this->_parseResponse($response);
     }
 
-    /**
+    /**re
      * List Message Queues
      *
      * Get a list of all queues in a project.
@@ -496,9 +496,11 @@ class SUMOHeavy_Queue_Adapter_IronMQ
         $response = $this->prepareHttpClient(
             "/{$this->_options['project_id']}/queues/{$queueName}/subscribers"
         )
-            ->setMethod(Zend_Http_Client::POST)
-            ->setParameterGet('subscribers', $subscribersJson)
+            ->setMethod(Zend_Http_Client::PUT)
+            ->setRawData($subscribersJson)
             ->request();
+
+        var_dump($subscribersJson);
 
         return $this->_parseResponse($response);
     }
