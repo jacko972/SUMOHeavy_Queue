@@ -441,22 +441,23 @@ class SUMOHeavy_Queue_Adapter_IronMQ
             );
         }
 
-        $subscriberArray = array (
-            'subscribers' => $urls
+        $postData = array (
+            'subscribers'    => $urls,
+            'push_type'     => $pushType,
+            'retries'       => $retries,
+            'retries_delay' => $retriesDelay
         );
 
-        $subscribersJson = Zend_Json::encode($subscriberArray);
+        $postDataJson = Zend_Json::encode($postData);
 
         $response = $this->prepareHttpClient(
             "/{$this->_options['project_id']}/queues/{$queueName}"
         )
             ->setMethod(Zend_Http_Client::POST)
-            ->setParameterGet('subscribers', $subscribersJson)
-            ->setParameterGet('push_type', $pushType)
-            ->setParameterGet('retries', $retries)
-            ->setParameterGet('retries_delay', $retriesDelay)
+            ->setRawData($postDataJson)
             ->request();
 
+        var_dump($postDataJson);
         return $this->_parseResponse($response);
     }
 
