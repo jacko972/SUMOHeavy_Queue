@@ -28,6 +28,13 @@ class SUMOHeavy_Queue_Adapter_IronMQ
     const PROJECTS_URI = 'http://mq-aws-us-east-1.iron.io/1/projects';
 
     /**
+     * Custom project Uri
+     *
+     * @var
+     */
+    protected $_projectUri = self::PROJECTS_URI;
+
+    /**
      * Get a http client instance
      *
      * @param string $path
@@ -35,8 +42,9 @@ class SUMOHeavy_Queue_Adapter_IronMQ
      */
     protected function prepareHttpClient($path)
     {
+
         return $this->getHttpClient()
-                    ->setUri(self::PROJECTS_URI . $path);
+                    ->setUri($this->getProjectUri() . $path);
     }
 
     /**
@@ -138,6 +146,28 @@ class SUMOHeavy_Queue_Adapter_IronMQ
         }
 
         return $this->_client;
+    }
+
+    /**
+     * Gets the project URI
+     *
+     * @return string
+     */
+    public function getProjectUri()
+    {
+        return $this->_projectUri;
+    }
+
+    /**
+     * Sets the project URI
+     *
+     * @param $url
+     * @return bool
+     */
+    public function setProjectUri($url)
+    {
+        $this->_projectUri = $url;
+        return true;
     }
 
     /**

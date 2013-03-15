@@ -17,6 +17,8 @@ $queueOptions = array(
 $zendQueue = new Zend_Queue('Array', $queueOptions);
 $queue = new SUMOHeavy_Queue_Adapter_IronMQ($options, $zendQueue);
 
+$queue->setProjectUri('http://mq-aws-us-east-1.iron.io/1/custom-project-uri'); // Set a custom project URI
+
 $queue->send("HELLO"); // Send a message to the queue
 $queue->getQueues()); // Get the messages in a queue
 $queue->receive(2)); // Receive 2 messages
