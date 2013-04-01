@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * IronMQ
+ *
+ * NOTICE OF LICENSE
+ *
+ * This source file is subject to the Open Software License (OSL 3.0)
+ * that is bundled with this package in the file LICENSE.txt.
+ * It is also available through the world-wide-web at this URL:
+ * http://opensource.org/licenses/osl-3.0.php
+ * If you did not receive a copy of the license and are unable to
+ * obtain it through the world-wide-web, please send an email
+ * to info@sumoheavy.com so we can send you a copy immediately.
+ *
+ *
+ * @category    SUMOHeavy
+ * @package     SUMOHeavy_IronMQ
+ * @author      Robert Brodie <robert@sumoheavy.com>
+ * @copyright   Copyright (c) 2010 - 2013 SUMO Heavy Industries, LLC
+ * @license     http://www.opensource.org/licenses/osl-3.0.php Open Software License (OSL 3.0)
+ */
+-->
+<config>
+    <tabs>
+        <service translate="label" module="core">
+            <label>Services</label>
+        </service>
+    </tabs>
+    <sections>
+        <ironmq translate="label" module="adminhtml">
+            <label>IronMQ</label>
+            <tab>service</tab>
+            <sort_order>10</sort_order>
+            <show_in_default>1</show_in_default>
+            <show_in_website>1</show_in_website>
+            <show_in_store>1</show_in_store>
+            <groups>
+                <general translate="label comment">
+                    <label>General</label>
+                    <sort_order>50</sort_order>
+                    <show_in_default>1</show_in_default>
+                    <show_in_website>1</show_in_website>
+                    <show_in_store>1</show_in_store>
+                    <fields>
+                        <token translate="label comment">
+                            <label>Token</label>
+                            <comment>IronMQ Token</comment>
+                            <frontend_type>password</frontend_type>
+                            <sort_order>10</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </token>
+                        <project_id translate="label comment">
+                            <label>Project ID</label>
+                            <comment>IronMQ Project ID</comment>
+                            <frontend_type>password</frontend_type>
+                            <sort_order>10</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </project_id>
+                        <queues translate="label comment">
+                            <label>Queues</label>
+                            <comment>Queues to make available to Magento.</comment>
+                            <frontend_type>multiselect</frontend_type>
+                            <source_model>sumoheavy_ironmq/system_config_source_queue</source_model>
+                            <can_be_empty>1</can_be_empty>
+                            <sort_order>40</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </queues>
+                    </fields>
+                </general>
+            </groups>
+        </ironmq>
+    </sections>
+</config>
